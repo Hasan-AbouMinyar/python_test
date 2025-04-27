@@ -7,6 +7,7 @@ m = [ 2000,"hasan",24,"libyan"]
 n.append(4)
 n.append(2)
 n.insert(0,"google")
+print(len(w))
 n.pop()
 n.pop()
 n.pop()
