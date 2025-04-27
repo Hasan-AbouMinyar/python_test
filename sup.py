@@ -1,16 +1,23 @@
-n = [ 0,0,7,7,1,2]
+n = [5, 11, 22, 3, 4, 5, 6, 77, 88, 90, 91]
+
+print(n[-4])
+
+print(n[2])
 
 w = ["hasan","ahmed" , "abouminyar"]
 
 m = [ 2000,"hasan",24,"libyan"]
 
-n.append(4)
-n.append(2)
-n.insert(0,"google")
-print(len(w))
-n.pop()
-n.pop()
-n.pop()
-n.pop()
 
-print(n,m,w)
+
+
+# n.append(4)
+# n.append(2)
+# n.insert(0,"google")
+# print(len(w))
+# n.pop()
+# n.pop()
+# n.pop()
+# n.pop()
+
+# print(n,m,w)
