@@ -8,6 +8,11 @@ w = ["hasan","ahmed" , "abouminyar"]
 
 m = [ 2000,"hasan",24,"libyan"]
 
+v= n[:4]
+v= n[7:]
+v= n[1:7]
+print(v)
+
 
 
 
