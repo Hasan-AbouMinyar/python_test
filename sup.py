@@ -8,6 +8,11 @@ w = ["hasan","ahmed" , "abouminyar"]
 
 m = [ 2000,"hasan",24,"libyan"]
 
+if 5343 in n:
+    print("yas them number is in the list")
+else:
+    print("no the number is not in the list")
+
 v= n[:4]
 v= n[7:]
 v= n[1:7]
