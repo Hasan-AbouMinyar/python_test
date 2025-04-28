@@ -8,6 +8,28 @@ w = ["hasan","ahmed" ,"mohamed","majd", "abouminyar"]
 
 m = [ 2000,"hasan",24,"libyan"]
 print(w)
+
+w.remove ("ahmed")
+print(w)
+
+w.pop(2)
+print(w)
+
+w.pop()
+print(w)
+
+del w[1]
+print(w)
+
+w.clear()
+print(w)
+
+print(m)
+
+del m[3]
+print(m)
+
+
 # w[2:4]=["ali","abdalstar"]
 # w[1:2]=["giga","net","machine"]
 
