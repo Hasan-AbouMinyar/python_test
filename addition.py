@@ -4,6 +4,32 @@ w = ["hasan","ahmed" ,"mohamed","majd", "abouminyar"]
 
 m = [ 2000,"hasan",24,"libyan"]
 
+num = [2000,2001,2002,2003]
+
+name =["google","apple","microsoft","amazon","amazon","amazon"]
+
+
+print(name.count("amazon")) 
+
+print(name.index("apple"))
+
+
+# ex = num.copy()
+# ex.extend(name)
+# print(ex)
+
+# adding = num.copy()
+
+# print(adding)
+
+# for i in name:
+#     adding.append(i)
+
+# print(adding)
+
+# cople = num + name
+# print(cople)
+
 
 # print(m)
 # m1 = m.copy()
