@@ -4,3 +4,10 @@ w = ["hasan","ahmed" ,"mohamed","majd", "abouminyar"]
 
 m = [ 2000,"hasan",24,"libyan"]
 
+# print(m)
+
+# for i in w :
+#     print(i)
+
+for x in range(len(w)):
+    print(w[x])
