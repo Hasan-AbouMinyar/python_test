@@ -4,10 +4,18 @@ w = ["hasan","ahmed" ,"mohamed","majd", "abouminyar"]
 
 m = [ 2000,"hasan",24,"libyan"]
 
+
+
 # print(m)
 
 # for i in w :
 #     print(i)
 
-for x in range(len(w)):
-    print(w[x])
+# for x in range(len(w)):
+#     print(w[x])
+
+# o = 0 
+# while o < len(w):
+#     print(w[o])
+#     o+=1
+
