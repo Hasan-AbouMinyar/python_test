@@ -8,8 +8,16 @@ w = ["hasan","ahmed" ,"mohamed","majd", "abouminyar"]
 
 m = [ 2000,"hasan",24,"libyan"]
 print(w)
-w[2:4]=["ali","abdalstar"]
-print(w)
+# w[2:4]=["ali","abdalstar"]
+# w[1:2]=["giga","net","machine"]
+
+# w.extend(["kahled","Ali"])
+# print(w)
+
+# w[1:4]= ["<=>"]
+
+# w.insert(0,"his name is ")
+# print(w)
 # if 5343 in n:
 #     print("yas them number is in the list")
 # else:
