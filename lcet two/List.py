@@ -66,6 +66,6 @@ for i in cars:
 
 cars.sort(reverse=True)
 print(cars)
-print(count(cars)))
+print(cars.count("Toyota"))
 print(cars.index("Toyota"))
 print(cars)
