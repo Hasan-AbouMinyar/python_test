@@ -5,6 +5,6 @@
 # file = open("example.txt", "a")
 # file.write("\n fucking threeth line bro")
 
-import os
+# import os
 
-os.remove("examplee.txt")
+# os.remove("examplee.txt")
