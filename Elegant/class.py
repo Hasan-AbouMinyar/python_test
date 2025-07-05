@@ -10,4 +10,5 @@ class Me:
 i = Me("Hasan", 25)
 
 i.greet()
-print(i.greet())
+# print(i.greet())
+print(i)
