@@ -2,5 +2,9 @@
 # print(file.readline())
 # file.close()
 
-file = open("example.txt", "a")
-file.write("\n fucking threeth line bro")
+# file = open("example.txt", "a")
+# file.write("\n fucking threeth line bro")
+
+import os
+
+os.remove("examplee.txt")
