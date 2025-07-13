@@ -1,4 +1,4 @@
-day = 2 
+day 2 
 
 # match day:
 #     case 1 | 4:
