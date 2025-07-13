@@ -7,3 +7,5 @@ call = mysql.connector.connect(
 )
 
 print(call)
+
+call.close()
