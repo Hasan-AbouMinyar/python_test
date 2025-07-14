@@ -1,0 +1,5 @@
+file = open("json.txt", "a")
+file.write("This is a new line.\n")
+me = file.read()
+print(me)
+file.close()
