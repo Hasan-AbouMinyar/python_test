@@ -1,4 +1,5 @@
 # دالة لتحديد الفئة العمرية
+
 def classify_age(age):
     if age >= 60:
         return "a senior citizen"
