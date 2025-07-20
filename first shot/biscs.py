@@ -1,5 +1,4 @@
 # دالة لتحديد الفئة العمرية
-
 def classify_age(age):
     if age >= 60:
         return "a senior citizen"
@@ -12,13 +11,30 @@ def classify_age(age):
     else:
         return "a baby"
 
-# أخذ الاسم والعمر من المستخدم
-name = input("Enter your name: ")
-age = int(input("Enter your age: "))
+# قائمة الأشخاص (اسم + عمر)
+people = {
+    "Hasan": 22,
+    "Sarah": 15,
+    "Ali": 65,
+    "Mona": 2,
+    "Khalid": 37
+}
 
-# طباعة معلومات الشخص
-print(f"{name} is {age} years old.")
+# معالجة كل شخص في القائمة
+for name, age in people.items():
+    print("-" * 30)
+    print(f"{name} is {age} years old.")
 
-# طباعة الفئة العمرية
-category = classify_age(age)
-print(f"{name} is {category}.")
+    # تحديد الفئة العمرية
+    category = classify_age(age)
+    print(f"{name} is {category}.")
+
+    # حساب السنوات المتبقية ليبلغ 100 سنة
+    years_to_100 = 100 - age
+    if years_to_100 > 0:
+        print(f"{name} will turn 100 years old in {years_to_100} years.")
+    else:
+        print(f"{name} is already 100 years old or older!")
+
+print("-" * 30)
+print("Finished processing all people!")
