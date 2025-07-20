@@ -1,117 +1,159 @@
-import asyncio
-import csv
-from dataclasses import dataclass, field
+import sqlite3
+from fastapi import FastAPI, HTTPException, Depends
+from pydantic import BaseModel, Field
 from datetime import date
-from typing import List, Dict
+from typing import List
+import uvicorn
+import asyncio
 
-@dataclass(frozen=True, order=True)
-class Person:
+# --- Configuration ---
+DATABASE_FILE = "people_data.db"
+
+# --- Database Layer ---
+
+def get_db_connection():
+    """Dependency: Creates and yields a database connection."""
+    conn = sqlite3.connect(DATABASE_FILE)
+    conn.row_factory = sqlite3.Row  # Makes rows behave like dictionaries
+    try:
+        yield conn
+    finally:
+        conn.close()
+
+def setup_database(conn: sqlite3.Connection):
+    """Creates the 'people' table if it doesn't exist."""
+    cursor = conn.cursor()
+    cursor.execute("""
+    CREATE TABLE IF NOT EXISTS people (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        name TEXT NOT NULL,
+        birth_year INTEGER NOT NULL
+    );
+    """)
+    # Add initial data only if table is empty
+    cursor.execute("SELECT COUNT(*) FROM people")
+    if cursor.fetchone()[0] == 0:
+        initial_data = [
+            ('Hasan', 2003),
+            ('Sarah', 2010),
+            ('Ali', 1960),
+            ('Mona', 2023)
+        ]
+        cursor.executemany("INSERT INTO people (name, birth_year) VALUES (?, ?)", initial_data)
+    conn.commit()
+    print("Database initialized and checked successfully.")
+
+
+# --- Pydantic Models (Data Validation Layer) ---
+
+class PersonBase(BaseModel):
+    """Base model with common fields."""
+    name: str = Field(..., min_length=2, description="The person's full name.")
+    birth_year: int = Field(..., gt=1900, le=date.today().year, description="The person's year of birth.")
+
+class PersonCreate(PersonBase):
+    """Model used for creating a new person via API."""
+    pass
+
+class PersonResponse(PersonBase):
+    """Model for returning person data from the API, includes calculated fields."""
+    id: int
+    age: int
+    category: str
+    is_centenarian: bool = Field(description="Is the person 100 years old or more?")
+
+# --- FastAPI Application ---
+
+app = FastAPI(
+    title="People Data API 🧑‍💻",
+    description="A hyper-advanced API to manage, create, and retrieve data about people.",
+    version="3.0.0"
+)
+
+@app.on_event("startup")
+async def startup_event():
+    """Initialize the database when the application starts."""
+    # Run setup in a separate thread to avoid blocking the event loop
+    await asyncio.to_thread(setup_database, next(get_db_connection()))
+
+
+# --- API Endpoints (Routes) ---
+
+@app.post("/people/", response_model=PersonResponse, status_code=201)
+async def create_person(
+    person: PersonCreate, 
+    db: sqlite3.Connection = Depends(get_db_connection)
+):
     """
-    An immutable dataclass representing a person.
-    'frozen=True' makes instances of this class unchangeable after creation.
-    'order=True' automatically implements comparison methods (__lt__, __gt__, etc.).
+    Creates a new person record in the database.
     """
-    name: str
-    birth_year: int
-    # 'field' is used to compute a value after the object is created.
-    age: int = field(init=False)
+    try:
+        cursor = db.cursor()
+        cursor.execute(
+            "INSERT INTO people (name, birth_year) VALUES (?, ?)",
+            (person.name, person.birth_year)
+        )
+        db.commit()
+        new_id = cursor.lastrowid
+        return await get_person(new_id, db)
+    except sqlite3.IntegrityError:
+        raise HTTPException(status_code=400, detail="An error occurred while creating the person.")
 
-    def __post_init__(self):
-        """
-        This method is called by the dataclass after the object is initialized.
-        We use it here to calculate the age.
-        """
-        current_year = date.today().year
-        # Since the class is frozen, we can't assign to self.age directly.
-        # We must use a special (but standard) way to set the attribute.
-        object.__setattr__(self, 'age', current_year - self.birth_year)
 
-    @property
-    def age_category(self) -> str:
-        """Determines the age category based on the person's age."""
-        if self.age >= 65:
-            return "Senior Citizen"
-        elif self.age >= 18:
-            return "Adult"
-        elif self.age >= 13:
-            return "Teenager"
-        elif self.age >= 3:
-            return "Child"
-        else:
-            return "Baby"
-
-    def years_until_100(self) -> int:
-        """Calculates the years remaining until the person turns 100."""
-        return 100 - self.age
-
-    def to_dict(self) -> Dict[str, any]:
-        """Converts the person object to a dictionary for CSV writing."""
-        return {
-            "Name": self.name,
-            "Birth Year": self.birth_year,
-            "Age": self.age,
-            "Category": self.age_category,
-            "Years to 100": self.years_until_100()
-        }
-
-async def process_person_data(name: str, birth_year: int) -> Person:
+@app.get("/people/", response_model=List[PersonResponse])
+async def list_people(db: sqlite3.Connection = Depends(get_db_connection)):
     """
-    An asynchronous function to simulate fetching and processing data for a person.
-    `async` defines the function as a coroutine.
-    `await` pauses the function to wait for a (simulated) slow operation.
+    Retrieves a list of all people from the database with calculated age data.
     """
-    print(f"⏳ Fetching data for {name}...")
-    # Simulate a network request or slow database query (0.5 to 1.5 seconds)
-    await asyncio.sleep(0.5 + (hash(name) % 10) / 10.0)
-    print(f"✅ Data received for {name}.")
-    return Person(name=name, birth_year=birth_year)
-
-def export_to_csv(people: List[Person], filename: str = "people_report.csv"):
-    """Exports a list of Person objects to a CSV file."""
-    if not people:
-        return
+    cursor = db.cursor()
+    cursor.execute("SELECT id, name, birth_year FROM people")
+    people_rows = cursor.fetchall()
     
-    print(f"\n📄 Exporting report to '{filename}'...")
-    # Get the headers from the first person's dictionary keys
-    headers = people[0].to_dict().keys()
-    
-    with open(filename, 'w', newline='', encoding='utf-8') as output_file:
-        dict_writer = csv.DictWriter(output_file, fieldnames=headers)
-        dict_writer.writeheader()
-        dict_writer.writerows([p.to_dict() for p in people])
-    print("✨ Export complete!")
+    # Process rows into response models
+    current_year = date.today().year
+    response_list = []
+    for row in people_rows:
+        age = current_year - row['birth_year']
+        category = "Senior" if age >= 65 else "Adult" if age >= 18 else "Teenager" if age >= 13 else "Child" if age >= 3 else "Baby"
+        response_list.append(
+            PersonResponse(
+                id=row['id'],
+                name=row['name'],
+                birth_year=row['birth_year'],
+                age=age,
+                category=category,
+                is_centenarian=(age >= 100)
+            )
+        )
+    return response_list
 
 
-async def main():
-    """The main asynchronous entry point for the script."""
-    people_data_source = {
-        "Hasan": 2003,
-        "Sarah": 2010,
-        "Ali": 1960,
-        "Mona": 2023,
-        "Khalid": 1988,
-        "Fatima": 1955,
-        "Omar": 2018
-    }
+@app.get("/people/{person_id}", response_model=PersonResponse)
+async def get_person(
+    person_id: int, 
+    db: sqlite3.Connection = Depends(get_db_connection)
+):
+    """
+    Retrieves a single person by their unique ID.
+    """
+    cursor = db.cursor()
+    cursor.execute("SELECT id, name, birth_year FROM people WHERE id = ?", (person_id,))
+    row = cursor.fetchone()
+    if row is None:
+        raise HTTPException(status_code=404, detail=f"Person with ID {person_id} not found.")
 
-    # Create a list of asynchronous tasks
-    tasks = [process_person_data(name, year) for name, year in people_data_source.items()]
-    
-    # Run all tasks concurrently and wait for them all to complete
-    print("🚀 Starting concurrent data processing...")
-    processed_people: List[Person] = await asyncio.gather(*tasks)
-    
-    # Sort the final list by age
-    processed_people.sort()
+    age = date.today().year - row['birth_year']
+    category = "Senior" if age >= 65 else "Adult" if age >= 18 else "Teenager" if age >= 13 else "Child" if age >= 3 else "Baby"
+    return PersonResponse(
+        id=row['id'],
+        name=row['name'],
+        birth_year=row['birth_year'],
+        age=age,
+        category=category,
+        is_centenarian=(age >= 100)
+    )
 
-    print("\n--- Processing Results ---")
-    for person in processed_people:
-        print(f"👤 {person.name} (Age: {person.age}) is a(n) {person.age_category}.")
-    
-    # Export the final data to a file
-    export_to_csv(processed_people)
-
-
+# --- To run the app directly (for development) ---
 if __name__ == "__main__":
-    # This is how you run the main asynchronous function
-    asyncio.run(main())
+    print("🚀 Starting API server... Access documentation at http://127.0.0.1:8000/docs")
+    uvicorn.run(app, host="127.0.0.1", port=8000)
