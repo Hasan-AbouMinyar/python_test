@@ -1,92 +1,117 @@
-# استيراد الوحدات اللازمة
+import asyncio
+import csv
+from dataclasses import dataclass, field
 from datetime import date
-from typing import List
+from typing import List, Dict
 
-# تعريف فئة لتنظيم بيانات ووظائف الشخص
+@dataclass(frozen=True, order=True)
 class Person:
     """
-    فئة تمثل شخصًا، مع خصائص للاسم والعمر والوظائف المرتبطة بهما.
+    An immutable dataclass representing a person.
+    'frozen=True' makes instances of this class unchangeable after creation.
+    'order=True' automatically implements comparison methods (__lt__, __gt__, etc.).
     """
-    def __init__(self, name: str, birth_year: int):
-        """
-        المنشئ لإنشاء كائن شخص جديد.
-        - name: اسم الشخص
-        - birth_year: سنة ميلاد الشخص
-        """
-        if not name or not isinstance(name, str):
-            raise ValueError("يجب أن يكون الاسم سلسلة نصية غير فارغة.")
-        if not isinstance(birth_year, int) or birth_year > date.today().year:
-            raise ValueError("سنة الميلاد يجب أن تكون رقمًا صحيحًا صالحًا.")
-            
-        self.name = name
-        self.birth_year = birth_year
-        self.age = self.calculate_age()
+    name: str
+    birth_year: int
+    # 'field' is used to compute a value after the object is created.
+    age: int = field(init=False)
 
-    def calculate_age(self) -> int:
-        """يحسب العمر الحالي بناءً على سنة الميلاد."""
+    def __post_init__(self):
+        """
+        This method is called by the dataclass after the object is initialized.
+        We use it here to calculate the age.
+        """
         current_year = date.today().year
-        return current_year - self.birth_year
+        # Since the class is frozen, we can't assign to self.age directly.
+        # We must use a special (but standard) way to set the attribute.
+        object.__setattr__(self, 'age', current_year - self.birth_year)
 
     @property
     def age_category(self) -> str:
-        """يحدد الفئة العمرية للشخص بناءً على عمره."""
+        """Determines the age category based on the person's age."""
         if self.age >= 65:
-            return "مواطن متقاعد"
+            return "Senior Citizen"
         elif self.age >= 18:
-            return "بالغ"
+            return "Adult"
         elif self.age >= 13:
-            return "مراهق"
+            return "Teenager"
         elif self.age >= 3:
-            return "طفل"
+            return "Child"
         else:
-            return "رضيع"
+            return "Baby"
 
     def years_until_100(self) -> int:
-        """يحسب عدد السنوات المتبقية حتى يبلغ الشخص 100 عام."""
+        """Calculates the years remaining until the person turns 100."""
         return 100 - self.age
 
-    def display_info(self):
-        """يعرض جميع معلومات الشخص بطريقة منسقة."""
-        print("-" * 35)
-        print(f"👤 الاسم: {self.name}")
-        print(f"📅 العمر: {self.age} عامًا (مواليد {self.birth_year})")
-        print(f"📊 الفئة العمرية: {self.age_category}")
-        
-        years_to_100 = self.years_until_100()
-        if years_to_100 > 0:
-            print(f"⏳ سيبلغ {self.name} 100 عام بعد {years_to_100} سنة.")
-        else:
-            print(f"🎉 {self.name} قد بلغ بالفعل 100 عام أو أكثر!")
+    def to_dict(self) -> Dict[str, any]:
+        """Converts the person object to a dictionary for CSV writing."""
+        return {
+            "Name": self.name,
+            "Birth Year": self.birth_year,
+            "Age": self.age,
+            "Category": self.age_category,
+            "Years to 100": self.years_until_100()
+        }
 
-# --- التنفيذ الرئيسي للبرنامج ---
-def main():
+async def process_person_data(name: str, birth_year: int) -> Person:
     """
-    الوظيفة الرئيسية لتشغيل البرنامج.
+    An asynchronous function to simulate fetching and processing data for a person.
+    `async` defines the function as a coroutine.
+    `await` pauses the function to wait for a (simulated) slow operation.
     """
-    # قائمة الأشخاص (اسم + سنة ميلاد)
-    people_data = {
-        "حسن": 2003,      # 22 years old in 2025
-        "سارة": 2010,     # 15 years old in 2025
-        "علي": 1960,       # 65 years old in 2025
-        "منى": 2023,       # 2 years old in 2025
-        "خالد": 1988      # 37 years old in 2025
+    print(f"⏳ Fetching data for {name}...")
+    # Simulate a network request or slow database query (0.5 to 1.5 seconds)
+    await asyncio.sleep(0.5 + (hash(name) % 10) / 10.0)
+    print(f"✅ Data received for {name}.")
+    return Person(name=name, birth_year=birth_year)
+
+def export_to_csv(people: List[Person], filename: str = "people_report.csv"):
+    """Exports a list of Person objects to a CSV file."""
+    if not people:
+        return
+    
+    print(f"\n📄 Exporting report to '{filename}'...")
+    # Get the headers from the first person's dictionary keys
+    headers = people[0].to_dict().keys()
+    
+    with open(filename, 'w', newline='', encoding='utf-8') as output_file:
+        dict_writer = csv.DictWriter(output_file, fieldnames=headers)
+        dict_writer.writeheader()
+        dict_writer.writerows([p.to_dict() for p in people])
+    print("✨ Export complete!")
+
+
+async def main():
+    """The main asynchronous entry point for the script."""
+    people_data_source = {
+        "Hasan": 2003,
+        "Sarah": 2010,
+        "Ali": 1960,
+        "Mona": 2023,
+        "Khalid": 1988,
+        "Fatima": 1955,
+        "Omar": 2018
     }
 
-    # إنشاء قائمة من كائنات الأشخاص
-    try:
-        people_objects: List[Person] = [Person(name, year) for name, year in people_data.items()]
-    except ValueError as e:
-        print(f"خطأ في البيانات: {e}")
-        return
-
-    # معالجة وعرض معلومات كل شخص
-    print("🚀 بدء معالجة بيانات الأشخاص...\n")
-    for person in people_objects:
-        person.display_info()
+    # Create a list of asynchronous tasks
+    tasks = [process_person_data(name, year) for name, year in people_data_source.items()]
     
-    print("-" * 35)
-    print("\n✅ تم الانتهاء من معالجة جميع الأشخاص بنجاح!")
+    # Run all tasks concurrently and wait for them all to complete
+    print("🚀 Starting concurrent data processing...")
+    processed_people: List[Person] = await asyncio.gather(*tasks)
+    
+    # Sort the final list by age
+    processed_people.sort()
 
-# التأكد من تشغيل الكود فقط عند استدعاء الملف مباشرة
+    print("\n--- Processing Results ---")
+    for person in processed_people:
+        print(f"👤 {person.name} (Age: {person.age}) is a(n) {person.age_category}.")
+    
+    # Export the final data to a file
+    export_to_csv(processed_people)
+
+
 if __name__ == "__main__":
-    main()
+    # This is how you run the main asynchronous function
+    asyncio.run(main())
