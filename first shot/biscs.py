@@ -6,6 +6,7 @@ from typing import List
 import uvicorn
 import asyncio
 
+
 # --- Configuration ---
 DATABASE_FILE = "people_data.db"
 
