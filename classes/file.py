@@ -1,10 +1,8 @@
 import requests
 
-url = "https://inquiry.mof.gov.ly/api/me"
-
+url = 
 cookies = {
-    "khdm_alastaalam_ozar_almaly_se...": "eyJpd...long_token_here...",
-    "XSRF-TOKEN": "eyJpd...long_token_here..."
+    
 }
 
 headers = {
