@@ -1,3 +1,6 @@
+
+
+
 class father:
     def __init__(self, name):
         self.name = name
@@ -10,3 +13,4 @@ class son(father):
 
 o = son("John")
 o.show()
+
