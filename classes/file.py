@@ -1,6 +1,6 @@
 import requests
 
-url = 
+
 cookies = {
     
 }
